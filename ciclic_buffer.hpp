@@ -1,7 +1,7 @@
 #ifndef __CICLIC_BUFFER_HPP__
 #define __CICLIC_BUFFER_HPP__
 
-#define _DEFAULT_CICLIC_BUFFER_STORAGE_SIZE_ = 100
+#define _DEFAULT_CICLIC_BUFFER_STORAGE_SIZE_ 100
 
 namespace array_impl{
 //This structre implements ciclic buffer with fixated storage size
@@ -16,9 +16,9 @@ public:
 	//creates empty buffer with given storage size
 	ciclic_buffer(size_type storage_size = _DEFAULT_CICLIC_BUFFER_STORAGE_SIZE_);
 	ciclic_buffer(const ciclic_buffer<value_type>& other);
-	ciclic_buffer(ciclic_buffer<value_type>&& other);
+	ciclic_buffer(ciclic_buffer<value_type>&& other) noexcept;
 	ciclic_buffer<value_type>& operator=(const ciclic_buffer<value_type>& other);
-	ciclic_buffer<value_type>& operator=(ciclic_buffer<value_type>&& other);
+	ciclic_buffer<value_type>& operator=(ciclic_buffer<value_type>&& other) noexcept;
 	~ciclic_buffer();
 
 //public methods 
@@ -33,7 +33,7 @@ public:
 	//returns i-th element of the container
 	reference operator[](size_type i) noexcept;
 	//returns i-th element of the container
-	const_reference operator[](size_type i) noexcept const;
+	const_reference operator[](size_type i) const noexcept;
 	//returns i-th element of the container with bounds checking
 	reference at(size_type i);
 	//returns i-th element of the container with bounds checking
@@ -73,9 +73,9 @@ public:
 	//creates empty buffer with given storage size
 	ciclic_buffer(size_type storage_size = _DEFAULT_CICLIC_BUFFER_STORAGE_SIZE_);
 	ciclic_buffer(const ciclic_buffer<value_type>& other);
-	ciclic_buffer(ciclic_buffer<value_type>&& other);
+	ciclic_buffer(ciclic_buffer<value_type>&& other) noexcept;
 	ciclic_buffer<value_type>& operator=(const ciclic_buffer<value_type>& other);
-	ciclic_buffer<value_type>& operator=(ciclic_buffer<value_type>&& other);
+	ciclic_buffer<value_type>& operator=(ciclic_buffer<value_type>&& other) noexcept;
 	~ciclic_buffer();
 
 //public methods 
@@ -90,7 +90,7 @@ public:
 	//returns i-th element of the container
 	reference operator[](size_type i) noexcept;
 	//returns i-th element of the container
-	const_reference operator[](size_type i) noexcept const;
+	const_reference operator[](size_type i) const noexcept;
 	//returns i-th element of the container with bounds checking
 	reference at(size_type i);
 	//returns i-th element of the container with bounds checking
@@ -103,5 +103,9 @@ private:
 };
 
 } //namespace list_impl
+
+//---------------------------------------------------------------------------------------------------------------
+//										Implimentation part starts here
+//---------------------------------------------------------------------------------------------------------------
 
 #endif //__CICLIC_BUFFER_HPP__

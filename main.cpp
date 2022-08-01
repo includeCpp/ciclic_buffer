@@ -1,8 +1,8 @@
 #include<iostream>
 #include"ciclic_buffer.hpp"
 
-template<typename T>
-bool check_equal(const T& buff_1, const T& buff_2);
+template<typename T, typename Q>
+bool check_equal(const T& buff_1, const Q& buff_2);
 
 int main(){
 	array_impl::ciclic_buffer<int> buff_1;
@@ -24,11 +24,11 @@ int main(){
 	}
 
 	for(int i = 0; i < 25; i++){
-		buff_1.pop_back(i + (i * 2));
-		buff_2.pop_back(i + (i * 2));
+		buff_1.pop_back();
+		buff_2.pop_back();
 
-		buff_1.pop_front(i - (i * 2));
-		buff_2.pop_front(i - (i * 2));
+		buff_1.pop_front();
+		buff_2.pop_front();
 	}
 
 	if(check_equal(buff_1, buff_2)){
