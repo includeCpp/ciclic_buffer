@@ -217,8 +217,64 @@ typename list_impl::ciclic_buffer<T>::const_reference list_impl::ciclic_buffer<T
 } 
 
 //---------------------------------------------------------------------------------------------------------------
-//													  	Array 													
+//													  	Array													
 //---------------------------------------------------------------------------------------------------------------
+
+template<typename T>
+list_impl::ciclic_buffer<T>::ciclic_buffer<T>(size_type storage_size = _DEFAULT_STORAGE_SIZE_) : storage_size_(storage_size){
+	data_ = interpret_cast<T*>std::malloc(sizeof(T) * storage_size_);
+	begin_ = data_;
+	for(int i = 0; i < storage_size_; i++){
+		new(data_ + i) T{};
+	}
+	size_ = 0;
+}
+
+template<typename T>
+list_inpl::ciclic_buffer<T>::ciclic_buffer<T>(const ciclic_buffer<value_type>& other) : storage_size_(other.storage_size_), size_(other.size_) {
+	data_ = interpret_cast<T*>std::malloc(sizeof(T) * other.storage_size_)
+	for(int i = 0; i < size_; i++){
+		new(data_ + i) T{other.data_ + i};
+	}
+}
+
+template<typename T>
+ciclic_buffer(ciclic_buffer<value_type>&& other) noexcept : data_(other.data_), begin_(other.begin_), 
+storage_size_(other.storage_size_), size_(other.size_) {
+	other.data_ = nullptr;
+	other.begin_ = nullptr;
+	other.storage_size_ = 0;
+	other.size_ = 0;
+}
+
+template<typename T>
+array_impl::ciclic_buffer<value_type>::ciclic_buffer<value_type>& operator=(const ciclic_buffer<value_type>& other){
+	for(int i = 0; i < storage_size_; i++){
+		(data_ + i) -> ~value_type();
+	}
+	storage_size_ = other.storage_size_;
+	size_ = other.size_;
+	data_ = interpret_cast<T*>std::malloc(sizeof(T) * storage_size_);
+	for(int i = 0; i < storage_size_; i++){
+		new(data_ + i) T{other.data_};
+	}
+}
+
+template<typename T>
+array_impl::ciclic_buffer<value_type>::ciclic_buffer<value_type>& operator=(ciclic_buffer<value_type>&& other) noexcept {
+	for(int i = 0; i < storage_size_; i++){
+		(data_ + i) -> ~value_type();
+	}
+	data_ = other.data_;
+	begin_ = other.begin;
+	storage_size_ = other.storage_size_;
+	size_ = other.size_;
+	other.data_ = nullptr;
+	other.begin_ = nullptr;
+	other.storage_size_ = 0;
+	other.size_ = 0;
+}
+
 /*
 void array_impl::ciclic_buffer::push_back(const_reference value){
 	if(size_ == storage_size_){
