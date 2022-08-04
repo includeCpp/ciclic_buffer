@@ -221,8 +221,8 @@ typename list_impl::ciclic_buffer<T>::const_reference list_impl::ciclic_buffer<T
 //---------------------------------------------------------------------------------------------------------------
 
 template<typename T>
-list_impl::ciclic_buffer<T>::ciclic_buffer<T>(size_type storage_size = _DEFAULT_STORAGE_SIZE_) : storage_size_(storage_size){
-	data_ = interpret_cast<T*>std::malloc(sizeof(T) * storage_size_);
+array_impl::ciclic_buffer<T>::ciclic_buffer(size_type storage_size) : storage_size_(storage_size){
+	data_ = reinterpret_cast<T*>(std::malloc(sizeof(T) * storage_size_));
 	begin_ = data_;
 	for(int i = 0; i < storage_size_; i++){
 		new(data_ + i) T{};
@@ -231,15 +231,15 @@ list_impl::ciclic_buffer<T>::ciclic_buffer<T>(size_type storage_size = _DEFAULT_
 }
 
 template<typename T>
-list_inpl::ciclic_buffer<T>::ciclic_buffer<T>(const ciclic_buffer<value_type>& other) : storage_size_(other.storage_size_), size_(other.size_) {
-	data_ = interpret_cast<T*>std::malloc(sizeof(T) * other.storage_size_)
+array_impl::ciclic_buffer<T>::ciclic_buffer(const ciclic_buffer<value_type>& other) : storage_size_(other.storage_size_), size_(other.size_) {
+	data_ = reinterpret_cast<T*>(std::malloc(sizeof(T) * other.storage_size_));
 	for(int i = 0; i < size_; i++){
 		new(data_ + i) T{other.data_ + i};
 	}
 }
 
 template<typename T>
-ciclic_buffer(ciclic_buffer<value_type>&& other) noexcept : data_(other.data_), begin_(other.begin_), 
+array_impl::ciclic_buffer<T>::ciclic_buffer(ciclic_buffer<value_type>&& other) noexcept : data_(other.data_), begin_(other.begin_), 
 storage_size_(other.storage_size_), size_(other.size_) {
 	other.data_ = nullptr;
 	other.begin_ = nullptr;
@@ -248,22 +248,22 @@ storage_size_(other.storage_size_), size_(other.size_) {
 }
 
 template<typename T>
-array_impl::ciclic_buffer<value_type>::ciclic_buffer<value_type>& operator=(const ciclic_buffer<value_type>& other){
+typename array_impl::ciclic_buffer<T>::ciclic_buffer<T>& operator=(const ciclic_buffer<T>& other){  //почему не можем писать <value_type>
 	for(int i = 0; i < storage_size_; i++){
-		(data_ + i) -> ~value_type();
+		(data_ + i) -> ~T();
 	}
 	storage_size_ = other.storage_size_;
 	size_ = other.size_;
-	data_ = interpret_cast<T*>std::malloc(sizeof(T) * storage_size_);
+	data_ = reinterpret_cast<T*>(std::malloc(sizeof(T) * storage_size_));
 	for(int i = 0; i < storage_size_; i++){
 		new(data_ + i) T{other.data_};
 	}
 }
 
 template<typename T>
-array_impl::ciclic_buffer<value_type>::ciclic_buffer<value_type>& operator=(ciclic_buffer<value_type>&& other) noexcept {
+typename array_impl::ciclic_buffer<T>::ciclic_buffer<T>& operator=(ciclic_buffer<T>&& other) noexcept {
 	for(int i = 0; i < storage_size_; i++){
-		(data_ + i) -> ~value_type();
+		(data_ + i) -> ~T();
 	}
 	data_ = other.data_;
 	begin_ = other.begin;
