@@ -43,7 +43,7 @@ public:
 
 private:
 	T* data_;
-	T* begin_;
+	size_type indent_;
 	size_type storage_size_;
 	size_type size_;
 
@@ -101,7 +101,7 @@ public:
 private:
 	internal::list_node<T>* first_; 
 	internal::list_node<T>* last_; 
-	const size_type storage_size_;
+	size_type storage_size_;
 	size_type size_;
 };
 
@@ -117,6 +117,117 @@ list_impl::internal::list_node<T>::list_node(list_node<T>* next, list_node<T>* p
 	if(nullptr == value_ptr_){
 		throw std::bad_alloc{};
 	}
+}
+//TODO add exception handling
+template<typename T> //++
+list_impl::ciclic_buffer<T>::ciclic_buffer(size_type storage_size) : storage_size_(storage_size), size_(0) {
+	internal::list_node<T>* node_ptr = nullptr;
+	if(storage_size_ == 1){
+		node_ptr = new internal::list_node<T>();
+		node_ptr -> next_ = node_ptr;
+		node_ptr -> prev_ = node_ptr;
+		first_ = node_ptr;
+	} else{
+		for(size_type i = 0; i < storage_size_; i++){
+			if(i == 0){
+				node_ptr = new internal::list_node<T>();
+				first_ = node_ptr;
+				last_ = node_ptr;
+			} 
+			else if((i > 0) && (i < (storage_size_ - 1))) {
+				node_ptr = new internal::list_node<T>(nullptr, last_);
+				last_ -> next_ = node_ptr;
+				last_ = node_ptr;
+			} else {
+				node_ptr = new internal::list_node<T>(first_, last_);
+				first_ -> prev_ = node_ptr;
+			}
+		}
+	}
+	last_ = first_;
+}
+
+template<typename T> //++
+list_impl::ciclic_buffer<T>::ciclic_buffer(const ciclic_buffer<value_type>& other) : storage_size_(other.storage_size_), size_(other.size_)
+{
+	internal::list_node<T>* node_ptr = nullptr;
+	internal::list_node<T>* node_tmp_ptr = nullptr;
+	internal::list_node<T>* first_el = nullptr;
+	if(storage_size_ == 1){
+		node_ptr = new internal::list_node<T>();
+		node_ptr -> value_ptr_ = &other[0];
+		node_ptr -> next_ = node_ptr;
+		node_ptr -> prev_ = node_ptr;
+		return;
+	}
+	for(size_type i = 0; i < storage_size_; i++){
+		if(i == 0){
+			node_ptr = new internal::list_node<T>();
+			node_ptr -> value_ptr_ = &other[i];
+			node_tmp_ptr = node_ptr;
+			first_el = node_ptr;
+		}
+		else if(i > 0 && i < storage_size_ - 2) {
+			node_ptr = new internal::list_node<T>();
+			node_ptr -> value_ptr_ = &other[i];
+			node_tmp_ptr -> next_ = node_ptr;
+			node_ptr -> prev_ = node_tmp_ptr;
+			node_tmp_ptr = node_ptr;
+		} else {
+			node_ptr = new internal::list_node<T>();
+			node_ptr -> value_ptr_ = &other[i];
+			node_tmp_ptr -> next_ = node_ptr;
+			node_ptr -> prev_ = node_tmp_ptr;
+			node_tmp_ptr = node_ptr;
+			node_tmp_ptr -> next_ = first_el;
+			first_el -> prev_ = node_tmp_ptr;
+		}
+	}
+}
+
+template<typename T>
+list_impl::ciclic_buffer<T>::ciclic_buffer(ciclic_buffer<value_type>&& other) noexcept : storage_size_(other.storage_size_), size_(other.size_) 
+{
+	//clear
+	internal::list_node<T>* node_ptr = nullptr;
+	internal::list_node<T>* node_tmp_ptr = nullptr;
+	internal::list_node<T>* first_el = nullptr;
+	if(storage_size_ == 1){
+
+	}
+	for(size_type i = 0; i < storage_size_; i++){
+		if(i == 0){
+			node_ptr = new internal::list_node<T>();
+			node_ptr -> value_ptr_ = &other[i];
+			node_tmp_ptr = node_ptr;
+			first_el = node_ptr;
+			other[i] -> value_ptr_ = nullptr;
+		}
+		else if(i > 0 && i < storage_size_ - 2) {
+			node_ptr = new internal::list_node<T>();
+			node_ptr -> value_ptr_ = &other[i];
+			node_tmp_ptr -> next_ = node_ptr;
+			node_ptr -> prev_ = node_tmp_ptr;
+			node_tmp_ptr = node_ptr;
+			other[i] -> value_ptr_ = nullptr;
+		} else {
+			node_ptr = new internal::list_node<T>();
+			node_ptr -> value_ptr_ = &other[i];
+			node_tmp_ptr -> next_ = node_ptr;
+			node_ptr -> prev_ = node_tmp_ptr;
+			node_tmp_ptr = node_ptr;
+			node_tmp_ptr -> next_ = first_el;
+			first_el -> prev_ = node_tmp_ptr;
+			other[i] -> value_ptr_ = nullptr;
+		}
+	}
+	other.storage_size_ = 0;
+	other.size_ = 0;
+}
+
+template<typename T>
+list_impl::ciclic_buffer<T>& list_impl::ciclic_buffer<T>::operator=(const ciclic_buffer<T>& other) {
+	
 }
 
 template<typename T>
@@ -170,13 +281,13 @@ typename list_impl::ciclic_buffer<T>::reference list_impl::ciclic_buffer<T>::ope
 		for(size_type j = 0; j < i; j++){
 			p = p -> next_;
 		}
-		return *(p -> value_);
+		return *(p -> value_ptr_);
 	} else {
 		list_impl::internal::list_node<T>* p = last_;
 		for(size_type j = size_; j > i; j--){
 			p = p -> prev_;
 		}
-		return *(p -> value_);
+		return *(p -> value_ptr_);
 	}
 }
 
@@ -187,13 +298,13 @@ typename list_impl::ciclic_buffer<T>::const_reference list_impl::ciclic_buffer<T
 		for(size_type j = 0; j < i; j++){
 			p = p -> next_;
 		}
-		return *(p -> value_);
+		return *(p -> value_ptr_);
 	} else {
 		list_impl::internal::list_node<T>* p = last_;
 		for(size_type j = size_; j > i; j--){
 			p = p -> prev_;
 		}
-		return *(p -> value_);
+		return *(p -> value_ptr_);
 	}
 }
 
@@ -221,59 +332,75 @@ typename list_impl::ciclic_buffer<T>::const_reference list_impl::ciclic_buffer<T
 //---------------------------------------------------------------------------------------------------------------
 
 template<typename T>
-array_impl::ciclic_buffer<T>::ciclic_buffer(size_type storage_size) : storage_size_(storage_size){
+array_impl::ciclic_buffer<T>::ciclic_buffer(size_type storage_size) : indent_(0), storage_size_(storage_size), size_(0){
 	data_ = reinterpret_cast<T*>(std::malloc(sizeof(T) * storage_size_));
-	begin_ = data_;
-	for(int i = 0; i < storage_size_; i++){
-		new(data_ + i) T{};
+	if(data_ == nullptr){
+		throw std::bad_alloc{};
 	}
-	size_ = 0;
 }
 
 template<typename T>
-array_impl::ciclic_buffer<T>::ciclic_buffer(const ciclic_buffer<value_type>& other) : storage_size_(other.storage_size_), size_(other.size_) {
+array_impl::ciclic_buffer<T>::ciclic_buffer(const ciclic_buffer<value_type>& other) : indent_(other.indent_), storage_size_(other.storage_size_), size_(other.size_) {
 	data_ = reinterpret_cast<T*>(std::malloc(sizeof(T) * other.storage_size_));
-	for(int i = 0; i < size_; i++){
-		new(data_ + i) T{other.data_ + i};
+	if(data_ == nullptr){
+		throw std::bad_alloc{};
+	}
+	for(size_type i = 0; i < size_; i++){
+		new(data_ + (i + indent_) % storage_size_) T{other.data_ + (i + indent_) % storage_size_};
 	}
 }
 
 template<typename T>
-array_impl::ciclic_buffer<T>::ciclic_buffer(ciclic_buffer<value_type>&& other) noexcept : data_(other.data_), begin_(other.begin_), 
+array_impl::ciclic_buffer<T>::ciclic_buffer(ciclic_buffer<value_type>&& other) noexcept : data_(other.data_), indent_(other.indent_), 
 storage_size_(other.storage_size_), size_(other.size_) {
 	other.data_ = nullptr;
-	other.begin_ = nullptr;
+	other.indent_ = 0;
 	other.storage_size_ = 0;
 	other.size_ = 0;
 }
 
+//optimization note try to avoid multiple memory reallocation
+//TODO change logic to calling throwing methods first than changing methods without exceptions 
 template<typename T>
-typename array_impl::ciclic_buffer<T>::ciclic_buffer<T>& operator=(const ciclic_buffer<T>& other){  //почему не можем писать <value_type>
-	for(int i = 0; i < storage_size_; i++){
-		(data_ + i) -> ~T();
+array_impl::ciclic_buffer<T>& array_impl::ciclic_buffer<T>::operator=(const ciclic_buffer<T>& other){
+	for(size_type i = 0; i < size_; i++){
+		(data_ + (i + indent_) % storage_size_) -> ~T();
 	}
+	std::free(data_); 
 	storage_size_ = other.storage_size_;
 	size_ = other.size_;
 	data_ = reinterpret_cast<T*>(std::malloc(sizeof(T) * storage_size_));
-	for(int i = 0; i < storage_size_; i++){
-		new(data_ + i) T{other.data_};
+	if(data_ == nullptr){
+		throw std::bad_alloc{};
+	}
+	for(size_type i = 0; i < size_; i++){
+		new(data_ + (i + indent_) % storage_size_) T{other.data_ + (i + indent_) % storage_size_};
 	}
 }
 
 template<typename T>
-typename array_impl::ciclic_buffer<T>::ciclic_buffer<T>& operator=(ciclic_buffer<T>&& other) noexcept {
-	for(int i = 0; i < storage_size_; i++){
-		(data_ + i) -> ~T();
+array_impl::ciclic_buffer<T>& array_impl::ciclic_buffer<T>::operator=(ciclic_buffer<T>&& other) noexcept {
+	for(size_type i = 0; i < size_; i++){
+		(data_ + (i + indent_) % storage_size_) -> ~T();
 	}
+	std::free(data_);
 	data_ = other.data_;
-	begin_ = other.begin;
+	indent_ = other.indent_;
 	storage_size_ = other.storage_size_;
 	size_ = other.size_;
 	other.data_ = nullptr;
-	other.begin_ = nullptr;
+	other.indent_ = 0;
 	other.storage_size_ = 0;
 	other.size_ = 0;
 }
+
+template<typename T>
+array_impl::ciclic_buffer<T>::~ciclic_buffer(){
+	for(size_type i = 0; i < size_; i++){
+		(data_ + (i + indent_) % storage_size_) -> ~T();
+	}
+	std::free(data_);
+};
 
 /*
 void array_impl::ciclic_buffer::push_back(const_reference value){
