@@ -29,9 +29,9 @@ public:
 	//adds element to the beginning of container, throws std::out_of_range if there is no memory for new element
 	void push_front(const_reference value);
 	//removes element from the back of the container 
-	void pop_back() noexcept;
+	void pop_back();
 	//removes element from the beginning of the container 
-	void pop_front() noexcept;
+	void pop_front();
 	//returns i-th element of the container
 	reference operator[](size_type i) noexcept;
 	//returns i-th element of the container
@@ -57,6 +57,7 @@ template<typename T>
 struct list_node{
 public:
 	list_node(list_node<T>* next = nullptr, list_node<T>* prev = nullptr);
+	~list_node() noexcept;
 	T* value_ptr_;
 	list_node<T>* next_;
 	list_node<T>* prev_;
@@ -97,12 +98,18 @@ public:
 	reference at(size_type i);
 	//returns i-th element of the container with bounds checking
 	const_reference at(size_type i) const;
+	//clears all elements without affecting capacity
+	void clear() noexcept;
 
 private:
 	internal::list_node<T>* first_; 
 	internal::list_node<T>* last_; 
 	size_type storage_size_;
 	size_type size_;
+	//
+	void clear_and_free() noexcept;
+	void buffer_allocation(size_type storage_size);
+	void constructor_call(const ciclic_buffer<value_type>& other);
 };
 
 } //namespace list_impl
@@ -118,10 +125,63 @@ list_impl::internal::list_node<T>::list_node(list_node<T>* next, list_node<T>* p
 		throw std::bad_alloc{};
 	}
 }
+
+template<typename T>
+list_impl::internal::list_node<T>::~list_node() noexcept{
+	std::free(value_ptr_);
+};
+
 //TODO add exception handling
 template<typename T> //++
-list_impl::ciclic_buffer<T>::ciclic_buffer(size_type storage_size) : storage_size_(storage_size), size_(0) {
+list_impl::ciclic_buffer<T>::ciclic_buffer(size_type storage_size){
+	buffer_allocation(storage_size);
+}
+
+//TODO add exception handling 
+template<typename T> //++
+list_impl::ciclic_buffer<T>::ciclic_buffer(const ciclic_buffer<value_type>& other) : ciclic_buffer(other.storage_size_) {
+	constructor_call(other);
+}
+
+template<typename T>
+list_impl::ciclic_buffer<T>::ciclic_buffer(ciclic_buffer<value_type>&& other) noexcept : first_(other.first_), last_(other.last_), 
+storage_size_(other.storage_size_), size_(other.size_) {
+	other.first_ = nullptr;
+	other.last_ = nullptr;
+	other.storage_size_ = 0;
+	other.size_ = 0;
+}
+
+template<typename T>
+list_impl::ciclic_buffer<T>& list_impl::ciclic_buffer<T>::operator=(const ciclic_buffer<T>& other) {
+	clear_and_free();
+	buffer_allocation(other.storage_size_);
+	constructor_call(other);
+}
+
+template<typename T>
+list_impl::ciclic_buffer<T>& list_impl::ciclic_buffer<T>::operator=(ciclic_buffer<T>&& other) noexcept{
+	clear_and_free();
+	first_ = other.first_;
+	last_ = other.last_;
+	storage_size_ = other.storage_size_;
+	size_ = other.size_;
+	other.first_ = nullptr;
+	other.last_ = nullptr;
+	other.storage_size_ = 0;
+	other.size_ = 0;
+}
+
+template<typename T>
+list_impl::ciclic_buffer<T>::~ciclic_buffer(){
+	clear_and_free();
+}
+
+template<typename T>
+void list_impl::ciclic_buffer<T>::buffer_allocation(size_type storage_size){
 	internal::list_node<T>* node_ptr = nullptr;
+	size_ = 0;
+	storage_size_ = storage_size;
 	if(storage_size_ == 1){
 		node_ptr = new internal::list_node<T>();
 		node_ptr -> next_ = node_ptr;
@@ -147,87 +207,36 @@ list_impl::ciclic_buffer<T>::ciclic_buffer(size_type storage_size) : storage_siz
 	last_ = first_;
 }
 
-template<typename T> //++
-list_impl::ciclic_buffer<T>::ciclic_buffer(const ciclic_buffer<value_type>& other) : storage_size_(other.storage_size_), size_(other.size_)
-{
-	internal::list_node<T>* node_ptr = nullptr;
-	internal::list_node<T>* node_tmp_ptr = nullptr;
-	internal::list_node<T>* first_el = nullptr;
-	if(storage_size_ == 1){
-		node_ptr = new internal::list_node<T>();
-		node_ptr -> value_ptr_ = &other[0];
-		node_ptr -> next_ = node_ptr;
-		node_ptr -> prev_ = node_ptr;
-		return;
+template<typename T>
+void list_impl::ciclic_buffer<T>::clear() noexcept{
+	for(size_type i = 0; i < size_; i++){
+		first_ -> value_ptr_ -> ~T();
+		first_ = first_ -> next_;
 	}
-	for(size_type i = 0; i < storage_size_; i++){
-		if(i == 0){
-			node_ptr = new internal::list_node<T>();
-			node_ptr -> value_ptr_ = &other[i];
-			node_tmp_ptr = node_ptr;
-			first_el = node_ptr;
-		}
-		else if(i > 0 && i < storage_size_ - 2) {
-			node_ptr = new internal::list_node<T>();
-			node_ptr -> value_ptr_ = &other[i];
-			node_tmp_ptr -> next_ = node_ptr;
-			node_ptr -> prev_ = node_tmp_ptr;
-			node_tmp_ptr = node_ptr;
-		} else {
-			node_ptr = new internal::list_node<T>();
-			node_ptr -> value_ptr_ = &other[i];
-			node_tmp_ptr -> next_ = node_ptr;
-			node_ptr -> prev_ = node_tmp_ptr;
-			node_tmp_ptr = node_ptr;
-			node_tmp_ptr -> next_ = first_el;
-			first_el -> prev_ = node_tmp_ptr;
-		}
-	}
+	size_ = 0;
 }
 
 template<typename T>
-list_impl::ciclic_buffer<T>::ciclic_buffer(ciclic_buffer<value_type>&& other) noexcept : storage_size_(other.storage_size_), size_(other.size_) 
-{
-	//clear
-	internal::list_node<T>* node_ptr = nullptr;
-	internal::list_node<T>* node_tmp_ptr = nullptr;
-	internal::list_node<T>* first_el = nullptr;
-	if(storage_size_ == 1){
-
-	}
+void list_impl::ciclic_buffer<T>::clear_and_free() noexcept{
+	clear();
+	last_ = first_;
 	for(size_type i = 0; i < storage_size_; i++){
-		if(i == 0){
-			node_ptr = new internal::list_node<T>();
-			node_ptr -> value_ptr_ = &other[i];
-			node_tmp_ptr = node_ptr;
-			first_el = node_ptr;
-			other[i] -> value_ptr_ = nullptr;
-		}
-		else if(i > 0 && i < storage_size_ - 2) {
-			node_ptr = new internal::list_node<T>();
-			node_ptr -> value_ptr_ = &other[i];
-			node_tmp_ptr -> next_ = node_ptr;
-			node_ptr -> prev_ = node_tmp_ptr;
-			node_tmp_ptr = node_ptr;
-			other[i] -> value_ptr_ = nullptr;
-		} else {
-			node_ptr = new internal::list_node<T>();
-			node_ptr -> value_ptr_ = &other[i];
-			node_tmp_ptr -> next_ = node_ptr;
-			node_ptr -> prev_ = node_tmp_ptr;
-			node_tmp_ptr = node_ptr;
-			node_tmp_ptr -> next_ = first_el;
-			first_el -> prev_ = node_tmp_ptr;
-			other[i] -> value_ptr_ = nullptr;
-		}
+		last_ = last_ -> next_;
+		delete first_;
+		first_ = last_;
 	}
-	other.storage_size_ = 0;
-	other.size_ = 0;
+	first_ = nullptr;
+	last_ = nullptr;
+	storage_size_ = 0;
 }
 
 template<typename T>
-list_impl::ciclic_buffer<T>& list_impl::ciclic_buffer<T>::operator=(const ciclic_buffer<T>& other) {
-	
+void list_impl::ciclic_buffer<T>::constructor_call(const ciclic_buffer<T>& other){
+	for(size_type i = 0; i < other.size_; i++){
+		new(last_) T{other[i]};
+		last_ = last_ -> next_;
+	}
+	size_ = other.size_;
 }
 
 template<typename T>
@@ -402,34 +411,44 @@ array_impl::ciclic_buffer<T>::~ciclic_buffer(){
 	std::free(data_);
 };
 
-/*
-void array_impl::ciclic_buffer::push_back(const_reference value){
+template<typename T>
+void array_impl::ciclic_buffer<T>::push_back(const_reference value){
 	if(size_ == storage_size_){
-		storage_size_ *= 2;
+		throw std::logic_error{"Buffer overflow!"};
 	}
-	new(data_ + size_) value_type{value};
+	new(data_ + (size_ + indent_) % storage_size_) value_type{value};
+	size_++;
 }
 
-void array_impl::ciclic_buffer::push_front(const_reference value){
-	
+template<typename T>
+void array_impl::ciclic_buffer<T>::push_front(const_reference value){
+	if(size_ == storage_size_){
+		throw std::logic_error{"Buffer overflow!"};
+	}
+	indent_ = ((indent_ + storage_size_) - 1) % storage_size_;
+	new(data_ + indent_) value_type{value};
+	size_++;
 }
 
-void array_impl::ciclic_buffer::pop_back(){
-	~value_type(data_ + (size_ - 1));
-	std::free(data + (size_ - 1));
-	data_++;
-	begin_ = data_;
+template<typename T>
+void array_impl::ciclic_buffer<T>::pop_back(){
+	if(size_ == 0){
+		throw std::logic_error{"Buffer is empty"};
+	}
+	(data_ + (size_ - 1 + indent_) % storage_size_) -> ~T();
 	size_--;
 }
 
-void array_impl::ciclic_buffer::pop_front(){
-	data_++;
-	~value_type(begin_);
-	std::free(begin_);
-	begin_ = data_;
+template<typename T>
+void array_impl::ciclic_buffer<T>::pop_front(){
+	if(size_ == 0){
+		throw std::logic_error{"Buffer is empty"};
+	}
+	(data_ + indent_) -> ~T();
+	indent_ = (indent_ + 1) % storage_size_;
 	size_--;
 }
-*/
+
 #endif //__CICLIC_BUFFER_HPP__
 
 
