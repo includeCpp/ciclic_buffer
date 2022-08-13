@@ -40,6 +40,8 @@ public:
 	reference at(size_type i);
 	//returns i-th element of the container with bounds checking
 	const_reference at(size_type i) const;
+	//
+	void clear() noexcept;
 
 private:
 	T* data_;
@@ -447,6 +449,47 @@ void array_impl::ciclic_buffer<T>::pop_front(){
 	(data_ + indent_) -> ~T();
 	indent_ = (indent_ + 1) % storage_size_;
 	size_--;
+}
+
+template<typename T>
+typename array_impl::ciclic_buffer<T>::reference array_impl::ciclic_buffer<T>::operator[](size_type i) noexcept{
+	if(size_ < i){
+		throw std::out_of_range{"Argument is out of range."};
+	}
+	return data_[(indent_ + i) % storage_size_];
+}
+
+template<typename T>
+typename array_impl::ciclic_buffer<T>::const_reference array_impl::ciclic_buffer<T>::operator[](size_type i) const noexcept{
+	if(size_ < i){
+		throw std::out_of_range{"Argument is out of range."};
+	}
+	return data_[(indent_ + i) % storage_size_];
+}
+
+template<typename T>
+void array_impl::ciclic_buffer<T>::clear() noexcept{
+	for(size_type i = 0; i < size_; i++){
+		(data_ + (i + indent_) % storage_size_) -> ~T();
+	}
+}
+
+template<typename T>
+typename array_impl::ciclic_buffer<T>::reference array_impl::ciclic_buffer<T>::at(size_type i){
+	if(i > size_){
+		throw std::out_of_range{"Invalid argument"};
+	} else{
+		return this -> operator[](i);
+	}
+}
+
+template<typename T>
+typename array_impl::ciclic_buffer<T>::const_reference array_impl::ciclic_buffer<T>::at(size_type i) const{
+	if(i > size_){
+		throw std::out_of_range{"Invalid argument"};
+	} else{
+		return this -> operator[](i);
+	}
 }
 
 #endif //__CICLIC_BUFFER_HPP__
