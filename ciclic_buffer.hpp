@@ -3,7 +3,7 @@
 
 #include<exception>
 
-#define _DEFAULT_STORAGE_SIZE_ 100
+#define _DEFAULT_STORAGE_SIZE_ 1024
 
 namespace array_impl{
 //This structre implements ciclic buffer with fixated storage size
@@ -42,6 +42,8 @@ public:
 	const_reference at(size_type i) const;
 	//
 	void clear() noexcept;
+	//
+	size_type size() const noexcept;
 
 private:
 	T* data_;
@@ -102,6 +104,8 @@ public:
 	const_reference at(size_type i) const;
 	//clears all elements without affecting capacity
 	void clear() noexcept;
+	//
+	size_type size() const noexcept;
 
 private:
 	internal::list_node<T>* first_; 
@@ -202,6 +206,7 @@ void list_impl::ciclic_buffer<T>::buffer_allocation(size_type storage_size){
 				last_ = node_ptr;
 			} else {
 				node_ptr = new internal::list_node<T>(first_, last_);
+				last_ -> next_ = node_ptr; 
 				first_ -> prev_ = node_ptr;
 			}
 		}
@@ -243,13 +248,14 @@ void list_impl::ciclic_buffer<T>::constructor_call(const ciclic_buffer<T>& other
 
 template<typename T>
 void list_impl::ciclic_buffer<T>::push_back(const_reference value){
-	if(size_ == storage_size_){
+	if(size_ == storage_size_){ 
 		throw std::logic_error{"Buffer overflow!"};
 	} else {
 		last_ = last_ -> next_;
 		new(last_ -> value_ptr_) T{value};
 		size_++;
 	}
+	std::cout << *(last_ -> value_ptr_) << std::endl;
 }
 
 template<typename T>
@@ -287,11 +293,16 @@ void list_impl::ciclic_buffer<T>::pop_front(){
 
 template<typename T>
 typename list_impl::ciclic_buffer<T>::reference list_impl::ciclic_buffer<T>::operator[](size_type i) noexcept{
-	if((size_ / 2) < i){
+	if((size_ / 2) > i){
+		std::cout << "general first = " << first_ << std::endl;
 		list_impl::internal::list_node<T>* p = first_;
 		for(size_type j = 0; j < i; j++){
+			//
+			std::cout << p << std::endl;
 			p = p -> next_;
 		}
+		//
+		std::cout << p << std::endl;
 		return *(p -> value_ptr_);
 	} else {
 		list_impl::internal::list_node<T>* p = last_;
@@ -304,11 +315,16 @@ typename list_impl::ciclic_buffer<T>::reference list_impl::ciclic_buffer<T>::ope
 
 template<typename T>
 typename list_impl::ciclic_buffer<T>::const_reference list_impl::ciclic_buffer<T>::operator[](size_type i) const noexcept{
-	if((size_ / 2) < i){
+	if((size_ / 2) > i){
+		std::cout << "general first = " << first_ << std::endl;
 		list_impl::internal::list_node<T>* p = first_;
 		for(size_type j = 0; j < i; j++){
+			//
+			std::cout << "Here 1 "<< p << std::endl;
 			p = p -> next_;
 		}
+		//
+		std::cout << "Here 2 " << p << std::endl;
 		return *(p -> value_ptr_);
 	} else {
 		list_impl::internal::list_node<T>* p = last_;
@@ -337,6 +353,11 @@ typename list_impl::ciclic_buffer<T>::const_reference list_impl::ciclic_buffer<T
 		return this -> operator[](i);
 	}
 } 
+
+template<typename T>
+typename list_impl::ciclic_buffer<T>::size_type list_impl::ciclic_buffer<T>::size() const noexcept{
+	return size_;
+}
 
 //---------------------------------------------------------------------------------------------------------------
 //													  	Array													
@@ -453,17 +474,11 @@ void array_impl::ciclic_buffer<T>::pop_front(){
 
 template<typename T>
 typename array_impl::ciclic_buffer<T>::reference array_impl::ciclic_buffer<T>::operator[](size_type i) noexcept{
-	if(size_ < i){
-		throw std::out_of_range{"Argument is out of range."};
-	}
 	return data_[(indent_ + i) % storage_size_];
 }
 
 template<typename T>
 typename array_impl::ciclic_buffer<T>::const_reference array_impl::ciclic_buffer<T>::operator[](size_type i) const noexcept{
-	if(size_ < i){
-		throw std::out_of_range{"Argument is out of range."};
-	}
 	return data_[(indent_ + i) % storage_size_];
 }
 
@@ -477,7 +492,7 @@ void array_impl::ciclic_buffer<T>::clear() noexcept{
 template<typename T>
 typename array_impl::ciclic_buffer<T>::reference array_impl::ciclic_buffer<T>::at(size_type i){
 	if(i > size_){
-		throw std::out_of_range{"Invalid argument"};
+		throw std::out_of_range{"Invalid index"};
 	} else{
 		return this -> operator[](i);
 	}
@@ -486,11 +501,17 @@ typename array_impl::ciclic_buffer<T>::reference array_impl::ciclic_buffer<T>::a
 template<typename T>
 typename array_impl::ciclic_buffer<T>::const_reference array_impl::ciclic_buffer<T>::at(size_type i) const{
 	if(i > size_){
-		throw std::out_of_range{"Invalid argument"};
+		throw std::out_of_range{"Invalid index"};
 	} else{
 		return this -> operator[](i);
 	}
 }
+
+template<typename T>
+typename array_impl::ciclic_buffer<T>::size_type array_impl::ciclic_buffer<T>::size() const noexcept{
+	return size_;
+}
+
 
 #endif //__CICLIC_BUFFER_HPP__
 
