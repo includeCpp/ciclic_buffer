@@ -251,11 +251,11 @@ void list_impl::ciclic_buffer<T>::push_back(const_reference value){
 	if(size_ == storage_size_){ 
 		throw std::logic_error{"Buffer overflow!"};
 	} else {
-		last_ = last_ -> next_;
 		new(last_ -> value_ptr_) T{value};
+		last_ = last_ -> next_;
 		size_++;
 	}
-	std::cout << *(last_ -> value_ptr_) << std::endl;
+	std::cout << "Push_back "<< *(last_ -> value_ptr_) << std::endl;
 }
 
 template<typename T>
@@ -294,15 +294,10 @@ void list_impl::ciclic_buffer<T>::pop_front(){
 template<typename T>
 typename list_impl::ciclic_buffer<T>::reference list_impl::ciclic_buffer<T>::operator[](size_type i) noexcept{
 	if((size_ / 2) > i){
-		std::cout << "general first = " << first_ << std::endl;
 		list_impl::internal::list_node<T>* p = first_;
 		for(size_type j = 0; j < i; j++){
-			//
-			std::cout << p << std::endl;
 			p = p -> next_;
 		}
-		//
-		std::cout << p << std::endl;
 		return *(p -> value_ptr_);
 	} else {
 		list_impl::internal::list_node<T>* p = last_;
@@ -316,15 +311,10 @@ typename list_impl::ciclic_buffer<T>::reference list_impl::ciclic_buffer<T>::ope
 template<typename T>
 typename list_impl::ciclic_buffer<T>::const_reference list_impl::ciclic_buffer<T>::operator[](size_type i) const noexcept{
 	if((size_ / 2) > i){
-		std::cout << "general first = " << first_ << std::endl;
 		list_impl::internal::list_node<T>* p = first_;
 		for(size_type j = 0; j < i; j++){
-			//
-			std::cout << "Here 1 "<< p << std::endl;
 			p = p -> next_;
 		}
-		//
-		std::cout << "Here 2 " << p << std::endl;
 		return *(p -> value_ptr_);
 	} else {
 		list_impl::internal::list_node<T>* p = last_;
