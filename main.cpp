@@ -58,10 +58,8 @@ bool check_equal(const T& buff_1, const Q& buff_2){
 				return false;
 			}
 		}
-		std::cout << "Everything is cool." << std::endl;
 		return true;
 	} else{
-		std::cout << "false" << std::endl;
 		return false;
 	}
 }
