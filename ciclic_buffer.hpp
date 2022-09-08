@@ -40,9 +40,9 @@ public:
 	reference at(size_type i);
 	//returns i-th element of the container with bounds checking
 	const_reference at(size_type i) const;
-	//
+	//clears all elements without affecting capacity
 	void clear() noexcept;
-	//
+	//returns size of the container in int type
 	size_type size() const noexcept;
 
 private:
@@ -104,7 +104,7 @@ public:
 	const_reference at(size_type i) const;
 	//clears all elements without affecting capacity
 	void clear() noexcept;
-	//
+	//returns size of the container in int type
 	size_type size() const noexcept;
 
 private:
@@ -112,7 +112,6 @@ private:
 	internal::list_node<T>* last_; 
 	size_type storage_size_;
 	size_type size_;
-	//
 	void clear_and_free() noexcept;
 	void buffer_allocation(size_type storage_size);
 	void constructor_call(const ciclic_buffer<value_type>& other);
